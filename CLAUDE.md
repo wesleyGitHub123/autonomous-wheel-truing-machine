@@ -110,6 +110,9 @@ Run the cheapest tier that covers what changed, then stop. Costs are measured on
 | T5 | all 10 release images | 8–11 min | release/pre-tag gate, **and** whenever T4's coverage is not provable |
 | T6 | on-target probe | 3–5 min | driver, transport or timing changes |
 
+`-f <suite>` runs one native suite (`pio test … -e native -f test_acoustic_replay`, ~1 s) —
+for iterating, not for T2, which stays the whole suite. Program output only appears with `-v`.
+
 **T5 is normally a release/pre-tag gate** — board profile changes, `platformio.ini` changes,
 tagging. It is *also* required whenever blast-radius analysis cannot confidently establish
 that T4 covers every affected compile-time combination: a shared header touched by several
@@ -148,6 +151,14 @@ evidence:** after one unsuccessful reproduction cycle, add instrumentation, capt
 or halt and ask — never reflash the same image to look again. Serial is ground truth when the
 UI and the firmware disagree; two of the last three hard bugs looked like a hung orchestrator
 and were not.
+
+**Acoustic bugs have their own loop**, because a pluck cannot be repeated — the next one is a
+different pluck. Keep the samples instead: `GET /debug/capture.json` + `/debug/capture.pcm`
+(SPEC §12.5) hand over the words the last measurement analysed; `tools/capture_fetch.py` turns
+them into a bundle under `test/fixtures/acoustic/captures/`; `pio test -e native -f
+test_acoustic_replay` pushes them back through layers 2–4 on the host with the board's own
+numbers as the expectation. From there the cycle is 1 s and needs no hardware.
+`test/fixtures/acoustic/captures/README.md` has the format and what a passing replay proves.
 
 **Adding observability is inside the loop** and needs no checkpoint. Telemetry is
 observational: it must never participate in a control decision (§12.2, §13.3). Adding it must
