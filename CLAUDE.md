@@ -107,11 +107,15 @@ Run the cheapest tier that covers what changed, then stop. Costs are measured on
 | T2 | `pio test -d … -e native` | 45 s | **always** |
 | T3 | build the affected image(s) only | 5–100 s | any `src/` or `lib/` change |
 | T4 | representative matrix: the 5 flag variants on one board + 1 build on the other | ~2 min | pre-commit for a cross-cutting change |
-| T5 | all 10 release images | 8–11 min | **release gate only** — board profile, `platformio.ini`, or pre-tag |
+| T5 | all 10 release images | 8–11 min | release/pre-tag gate, **and** whenever T4's coverage is not provable |
 | T6 | on-target probe | 3–5 min | driver, transport or timing changes |
 
-**T5 is not a pre-commit gate.** A one-file change does not earn a ten-image sweep. Escalate
-to T4 when unsure which images are affected; escalate to T5 only for the reasons listed.
+**T5 is normally a release/pre-tag gate** — board profile changes, `platformio.ini` changes,
+tagging. It is *also* required whenever blast-radius analysis cannot confidently establish
+that T4 covers every affected compile-time combination: a shared header touched by several
+flag paths earns the full sweep even mid-development. The rule is not "T5 is rare", it is
+"T5 when you cannot show T4 is sufficient". A one-file change with an obvious blast radius
+does not earn a ten-image sweep.
 
 Do not sub-select native tests. The whole suite is 45 s; deciding which subset to run costs
 more than running all of it.
@@ -129,19 +133,26 @@ fail (`build_mode.h` enforces them with `#error`):
 ## Working loops
 
 **Feature.** Read the one spec section that governs it. Write the host test first, against
-`truing_fixtures` and the synthetic HAL — both exist so that nothing needs a board to be
-proven. Implement in the owning `lib/`. T2, then build only the affected image. Then stop:
-flashing is a physical action and needs a checkpoint.
+`truing_fixtures` and the synthetic HAL. Prove every host-testable contract and algorithm
+before touching a board; driver, transport, timing and physical-signal claims still need T6
+on-target evidence and cannot be established host-side. Implement in the owning `lib/`. T2,
+then build only the affected image. Then stop: flashing is a physical action and needs a
+checkpoint.
 
-**Debugging.** Reproduce on the host first; a bug that reproduces under `test/` is a bug with
-a 45-second cycle. If it only appears on target, capture once — serial console *and* the
-telemetry stream — and then work from the capture. Do not iterate blind on hardware: a second
-identical flash-and-watch round is the signal to stop and ask. Serial is ground truth when
-the UI and the firmware disagree; two of the last three hard bugs looked like a hung
-orchestrator and were not.
+**Debugging.** Classify first, then buy the cheapest ground truth that separates the
+candidates; instrument or capture; reproduce; fix; add the regression; verify at the tier the
+change earns. Reproduce on the host wherever the bug allows it — a bug that reproduces under
+`test/` has a 45-second cycle. If it is target-only, capture serial console *and* telemetry,
+then work from the capture. **Do not repeat an identical hardware cycle without gaining new
+evidence:** after one unsuccessful reproduction cycle, add instrumentation, capture a fixture,
+or halt and ask — never reflash the same image to look again. Serial is ground truth when the
+UI and the firmware disagree; two of the last three hard bugs looked like a hung orchestrator
+and were not.
 
-**Adding observability is inside the loop** and needs no checkpoint. Telemetry is best-effort
-by contract (§12.2) and must never affect control flow (§13.3), so it cannot change a result.
+**Adding observability is inside the loop** and needs no checkpoint. Telemetry is
+observational: it must never participate in a control decision (§12.2, §13.3). Adding it must
+preserve result semantics — but instrumentation is not physically free, so any meaningful
+timing, queue, memory or WiFi-load impact is checked on target rather than assumed away.
 
 ## Images
 
@@ -221,17 +232,18 @@ Three `Hash of data verified.` means the write worked — **not** that the board
 
 ## Halt and ask
 
-Proceed without checkpoints inside an agreed task: reading, writing code and tests, T0–T5,
-committing on a branch, adding observability, capturing fixtures, refactoring within a
-subsystem. Stop and ask for:
+Inside an agreed task envelope, proceed without asking at every step: investigation, writing
+code and tests, T0–T5, diagnostics, adding observability, capturing fixtures, non-destructive
+refactoring within a subsystem, committing. Stop and ask for:
 
 - a spec contradiction, or anything SPEC §16 lists as open;
 - a change to a subsystem boundary or to who owns a decision;
 - **any physical action** — flashing, wiring, jumpers, replugging;
 - a calibration, threshold or DSP constant change without evidence for it;
 - anything altering what a session claims about itself (provenance);
-- a bug that will not reproduce after one capture cycle — do not iterate blind on hardware;
-- destructive git, a new dependency, or a safety-policy change.
+- failure to reproduce after the agreed investigation cycle — do not iterate blind on hardware;
+- destructive git, a new dependency, or a safety-policy change;
+- anything that would *reinterpret* settled architecture rather than implement it.
 
 ## House rules that have already cost time
 
@@ -241,3 +253,10 @@ subsystem. Stop and ask for:
   legal); poll `GET_CURRENT_STATE` as well.
 - Commits are atomic and conventional, and the body says cause, evidence and limits — match
   the existing style, including what a change does *not* establish.
+
+## Where this file is going
+
+As `tools/flash.py`, `tools/verify.py` and the probe tooling land, the command-heavy sections
+above shrink to a pointer at those scripts. This file is the policy and the router;
+deterministic procedure belongs in executable tooling that can be run, tested and version-
+controlled, not in prose an agent has to re-enact by hand.
