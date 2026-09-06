@@ -147,8 +147,10 @@ candidates; instrument or capture; reproduce; fix; add the regression; verify at
 change earns. Reproduce on the host wherever the bug allows it — a bug that reproduces under
 `test/` has a 45-second cycle. If it is target-only, capture serial console *and* telemetry,
 then work from the capture. **Do not repeat an identical hardware cycle without gaining new
-evidence:** after one unsuccessful reproduction cycle, add instrumentation, capture a fixture,
-or halt and ask — never reflash the same image to look again. Serial is ground truth when the
+evidence** — but a repeat designed to gain some is ordinary work, not a checkpoint. After an
+unsuccessful cycle, change something that makes the next one informative: add instrumentation,
+capture a fixture, vary one condition. Reflashing the same image to look again is the thing to
+avoid, not flashing. Serial is ground truth when the
 UI and the firmware disagree; two of the last three hard bugs looked like a hung orchestrator
 and were not.
 
@@ -245,14 +247,27 @@ Three `Hash of data verified.` means the write worked — **not** that the board
 
 Inside an agreed task envelope, proceed without asking at every step: investigation, writing
 code and tests, T0–T5, diagnostics, adding observability, capturing fixtures, non-destructive
-refactoring within a subsystem, committing. Stop and ask for:
+refactoring within a subsystem, committing.
+
+**Flashing for testing is not a halt condition.** When the envelope includes hardware
+validation, T6 runs like any other tier: build the image, flash either board, reconnect,
+run serial or on-target probes, fetch debug captures, switch between the approved images, and
+repeat a hardware cycle whenever the next iteration is designed to gain new evidence. Stopping
+to ask before each of those was costing more than it protected.
+
+Stop and ask for:
 
 - a spec contradiction, or anything SPEC §16 lists as open;
 - a change to a subsystem boundary or to who owns a decision;
-- **any physical action** — flashing, wiring, jumpers, replugging;
+- **physical work on the machine** — wiring, adding or removing components, power
+  arrangements, pin assignments, jumpers, or destructive/unusual board recovery;
+- **an action only a person can take** — a hand pluck, turning a nipple, positioning the
+  wheel, reading a dial gauge. Halt at exactly that step, say what to do, and carry on after;
+- a hardware state that makes the next action ambiguous, or anything outside the agreed test
+  plan;
 - a calibration, threshold or DSP constant change without evidence for it;
 - anything altering what a session claims about itself (provenance);
-- failure to reproduce after the agreed investigation cycle — do not iterate blind on hardware;
+- failure to reproduce after the agreed investigation cycle;
 - destructive git, a new dependency, or a safety-policy change;
 - anything that would *reinterpret* settled architecture rather than implement it.
 
