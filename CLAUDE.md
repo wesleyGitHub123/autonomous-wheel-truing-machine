@@ -13,27 +13,86 @@ disagree, the spec wins and this file is the thing that is stale.
     model_prep/                  host-side influence-matrix generation -> artifact
     acoustic_prep/               golden acoustic fixtures from the research campaign
 
-## Build path — this bites first
+## Subsystem boundaries — settled
+
+One `lib/` directory per subsystem; `src/` is the ESP-IDF application and the composition
+root. SPEC §5 fixes both the decomposition and the dependency rules, so this is not a design
+space to re-open while implementing a feature.
+
+| where | owns | spec |
+|---|---|---|
+| `truing_core` | pure data and contracts: wheel state, measurements, status, admission, config, artifact, plan | §6, §8.11 |
+| `truing_calc` | the solver: influence-matrix application, two-part solve, cost function. No I/O. | §8 |
+| `truing_dsp` | onset, envelope, FFT, spectrum, peaks, tension model | §9.2 |
+| `truing_hal` | interfaces plus real/recorded/synthetic implementations: acoustic, runout, navigation, pluck, clock, telemetry | §5.1, §10, §10A |
+| `truing_orchestrator` | the state machine, cycle loop, per-spoke loop, auto-operator | §7 |
+| `truing_proto` | JSON, wire framing, session protocol | §12 |
+| `truing_board` | one board-profile header per board — the only place a pin number is allowed to appear | §4.3 |
+| `truing_fixtures` | golden fixtures shared by host tests and on-target bring-up | §14.2 |
+| `src/` | application: `main`, `bringup*` (on-target self-check), `orch_demo` (dependency wiring), `net_transport` + `web_ui`, NVS and artifact stores | §4.4 |
+
+Four rules are binding and settle most "where does this belong" questions:
+
+1. **The domain layer never touches the HAL.** `truing_calc` is pure math and stays
+   host-testable with no hardware present. A solver change that seems to need an I/O call is
+   a misplaced change.
+2. **Everything hardware-facing goes through `truing_hal`** — comms and navigation included,
+   not only the sensors.
+3. **Verification is a domain module, not a measurement subsystem.** It re-invokes the same
+   acoustic and runout interfaces the measurement phase used, and never grows its own
+   acquisition path.
+4. **Wheel state is data.** It holds measurements; it does not acquire them.
+
+Acoustic is a **sensor+actuator composite** behind a one-call contract (§9.1): pluck, capture
+and estimate are its internals, not orchestrator steps. Navigation is the single authority on
+wheel position (§10A) — in Capstone 2 the operator is the actuator, via `WAIT_FOR_OPERATOR`.
+The influence matrix is a data artifact, not a component (§5.2).
+
+## Which spec section answers which question
+
+Read the section that governs the change, not the whole document.
+
+| question | section |
+|---|---|
+| what a status value means, and what may be solved on | §6.3, §8.11 |
+| why tension rows are excluded from this solve | §8.4 Part 1, §8.11 |
+| retry, settle, partial state, `REMEASURE_GAPS` | §7.3.1, §7.4 |
+| what a session may claim to have converged | §7.5.1, §8.6.3 |
+| acoustic external contract and internal seams | §9.1, §9.2 |
+| capture robustness requirements | §9.4 |
+| units, sign conventions, indexing origin | §6.4, §6.5 |
+| telemetry rules; what telemetry must never do | §12.2, §13.3 |
+| debug channel scope (force state, inject values, dump internals) | §12.5 |
+| what is deliberately unresolved — ask, do not invent | §16 |
+| the silent-wrong-answer list, before implementing | §17.3 |
+
+## Build path and tools — this bites first
 
 ESP-IDF refuses any build path containing a space, and this project lives under
 `College Files - 4th Year/...`. Every `pio` command therefore runs through a junction:
 
-    C:\Users\shomb\truing_ws  ->  ...\Truing Repo\autonomous_truing_machine
+    $env:USERPROFILE\truing_ws  ->  ...\Truing Repo\autonomous_truing_machine
+
+`pio` is not on PATH. Write commands against `$env:USERPROFILE` rather than a literal home
+directory, so they survive a different machine or account:
+
+    & "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run -d "$env:USERPROFILE\truing_ws" -e s3_devkit
+
+    python   $env:USERPROFILE\.platformio\penv\Scripts\python.exe
+    esptool  $env:USERPROFILE\.platformio\packages\tool-esptoolpy\esptool.py
 
 Always pass `-d`. Running `pio` from the project directory fails with
-`Detected a whitespace character in project paths`.
+`Detected a whitespace character in project paths`. Below, `pio …` is shorthand for the full
+invocation above.
 
-    pio run -d C:\Users\shomb\truing_ws -e <env>
+Check the junction before blaming a build, and recreate it if it is gone — no admin needed,
+and it resolves its own target rather than having one typed in:
 
-If the junction is missing, recreate it from an ordinary `cmd` (no admin needed):
+    (Get-Item "$env:USERPROFILE\truing_ws").Target
+    New-Item -ItemType Junction -Path "$env:USERPROFILE\truing_ws" `
+             -Target (Join-Path (git rev-parse --show-toplevel) autonomous_truing_machine)
 
-    mklink /J C:\Users\shomb\truing_ws "<abs path>\Truing Repo\autonomous_truing_machine"
-
-Absolute tool paths (PATH is not reliable here):
-
-    pio      C:\Users\shomb\.platformio\penv\Scripts\pio.exe
-    python   C:\Users\shomb\.platformio\penv\Scripts\python.exe
-    esptool  C:\Users\shomb\.platformio\packages\tool-esptoolpy\esptool.py
+To remove one, `cmd /c rmdir <path>` — `Remove-Item` prompts, and prompts fail here.
 
 Host tests are unaffected by the space problem and run from either path.
 
@@ -45,7 +104,7 @@ Run the cheapest tier that covers what changed, then stop. Costs are measured on
 |---|---|---|---|
 | T0 | flag-matrix syntax check (below) | 3 s | `build_mode.h` or `platformio.ini` changed |
 | T1 | `node tools/ui_check.js` | 3 s | `src/web_ui.h` changed |
-| T2 | `pio test -d C:\Users\shomb\truing_ws -e native` | 45 s | **always** |
+| T2 | `pio test -d … -e native` | 45 s | **always** |
 | T3 | build the affected image(s) only | 5–100 s | any `src/` or `lib/` change |
 | T4 | representative matrix: the 5 flag variants on one board + 1 build on the other | ~2 min | pre-commit for a cross-cutting change |
 | T5 | all 10 release images | 8–11 min | **release gate only** — board profile, `platformio.ini`, or pre-tag |
@@ -67,6 +126,23 @@ fail (`build_mode.h` enforces them with `#error`):
     legal   (none) | SELF_PLAY | FAST_DEMO | REAL_FRONT_END | FAST_DEMO+REAL_FRONT_END
     illegal SELF_PLAY+FAST_DEMO | SELF_PLAY+REAL_FRONT_END | ACOUSTIC_DEMO_SPOKES alone
 
+## Working loops
+
+**Feature.** Read the one spec section that governs it. Write the host test first, against
+`truing_fixtures` and the synthetic HAL — both exist so that nothing needs a board to be
+proven. Implement in the owning `lib/`. T2, then build only the affected image. Then stop:
+flashing is a physical action and needs a checkpoint.
+
+**Debugging.** Reproduce on the host first; a bug that reproduces under `test/` is a bug with
+a 45-second cycle. If it only appears on target, capture once — serial console *and* the
+telemetry stream — and then work from the capture. Do not iterate blind on hardware: a second
+identical flash-and-watch round is the signal to stop and ask. Serial is ground truth when
+the UI and the firmware disagree; two of the last three hard bugs looked like a hung
+orchestrator and were not.
+
+**Adding observability is inside the loop** and needs no checkpoint. Telemetry is best-effort
+by contract (§12.2) and must never affect control flow (§13.3), so it cannot change a result.
+
 ## Images
 
 Eleven ESP environments. They differ along exactly two axes — the board profile header (pins)
@@ -83,26 +159,32 @@ build per board.
 | `s3_devkit_provision` | one-off NVS fixture provisioning; not part of the release sweep |
 | `native` | host unit tests |
 
-`docs/BUILD.md` explains what each image means and why. Do not duplicate that here.
+Every image stamps its own identity at build time (`tools/build_identity.py`): the short git
+rev, `-dirty` if the tree was not clean, and a hash of `src/web_ui.h`. `GET /id`, the boot log
+and the page itself all print them, so "is the board serving what I just built" is a
+comparison, not a guess. `docs/BUILD.md` explains what each image means and why; do not
+duplicate that here.
 
 ## Boards
 
 |  | DevKit | Nano |
 |---|---|---|
 | env prefix | `s3_devkit` | `nano_esp32` |
-| port | `COM4` (CH343 bridge) | `COM5` (native USB-Serial/JTAG) |
+| port (observed; confirm with `pio device list`) | `COM4` (CH343 bridge) | `COM5` (native USB-Serial/JTAG) |
 | base MAC | `dc:b4:d9:1a:95:94` | `74:4d:bd:a0:9f:0c` |
 | AP SSID / pass | `truing-1a9595` / `truing-d91a9595` | `truing-a09f0d` / `truing-bda09f0d` |
 | the INMP441 | not wired | **wired here** — bclk 5, ws 6, din 7 |
 
-Both serve the UI on `http://192.168.4.1/`. `GET /id` is the only reliable way to tell which
-board and which build you reached — check `build` matches the rev you flashed.
+COM numbers are assigned by Windows and can move; the MAC and the SSID are the board's real
+identity. Both serve the UI on `http://192.168.4.1/`. `GET /id` is the only reliable way to
+tell which board and which build you actually reached — check `build` matches the rev you
+flashed.
 
 ### Flashing
 
 DevKit — ordinary, the bridge handles reset:
 
-    pio run -d C:\Users\shomb\truing_ws -e <env> -t upload --upload-port COM4
+    pio run -e <env> -t upload --upload-port COM4
 
 Nano — **never `-t upload`**. PlatformIO routes it through Arduino DFU, which writes an
 application only into an OTA slot and cannot place a bootloader or partition table; it reports
@@ -155,9 +237,7 @@ subsystem. Stop and ask for:
 
 - `src/web_ui.h` is a C string literal full of `\n`. Edit it with Edit/Write, never through a
   shell heredoc — Bash strips the backslashes and silently corrupts the page.
-- Telemetry is best-effort by contract (SPEC §12.2). A probe that only reacts to events will
-  hang on a frame that was dropped; poll `GET_CURRENT_STATE` as well.
-- Serial is the ground truth when the UI disagrees with the firmware. Two of the last three
-  hard bugs looked like a hung orchestrator and were not.
+- A probe that only reacts to telemetry events will hang on a dropped frame (§12.2 makes that
+  legal); poll `GET_CURRENT_STATE` as well.
 - Commits are atomic and conventional, and the body says cause, evidence and limits — match
   the existing style, including what a change does *not* establish.
