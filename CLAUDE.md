@@ -113,6 +113,10 @@ Run the cheapest tier that covers what changed, then stop. Costs are measured on
 `-f <suite>` runs one native suite (`pio test … -e native -f test_acoustic_replay`, ~1 s) —
 for iterating, not for T2, which stays the whole suite. Program output only appears with `-v`.
 
+T6 tooling: `tools/probe/` (network — `ws_client.py`, `socket_pressure.py`; see its README for
+what each checks) and `tools/serial_capture.py` / `tools/nano_serial.py` (UART, one per board —
+they need opposite reset handling, see Boards below).
+
 **T5 is normally a release/pre-tag gate** — board profile changes, `platformio.ini` changes,
 tagging. It is *also* required whenever blast-radius analysis cannot confidently establish
 that T4 covers every affected compile-time combination: a shared header touched by several
