@@ -210,6 +210,14 @@ flashed.
 
 ### Flashing
 
+`tools/flash.py <env>` does the whole sequence below for either board — build, flash the
+board-correct way, then reset and read the console for the bring-up subsystem's own
+`BRINGUP SUMMARY: passed=N failed=0` line and its build-identity line, so a run reports
+"booted, build X" rather than "the write verified." `--verify-only` skips straight to that
+reset-and-check (useful right after a manual flash, or just to confirm what's currently
+running); `--no-build` flashes the existing output. Prefer it over the manual steps below —
+they're kept here as what it automates and what to fall back to if it can't run.
+
 DevKit — ordinary, the bridge handles reset:
 
     pio run -e <env> -t upload --upload-port COM4
