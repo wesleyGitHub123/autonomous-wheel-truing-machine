@@ -38,6 +38,9 @@ PowerShell:
     $env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "1000000"
     $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "z-ai/glm-5.3-flash"
     $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "z-ai/glm-5.3-flash"
+    if (-not ($env:ANTHROPIC_DEFAULT_HAIKU_MODEL -and $env:ANTHROPIC_DEFAULT_SONNET_MODEL)) {
+      Write-Host "REMAPS MISSING - agent model: aliases will bill as real Claude models through OpenRouter" -ForegroundColor Red
+    }
     claude --model z-ai/glm-5.3
 
 Git Bash:
@@ -49,6 +52,9 @@ Git Bash:
     export CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
     export ANTHROPIC_DEFAULT_HAIKU_MODEL="z-ai/glm-5.3-flash"
     export ANTHROPIC_DEFAULT_SONNET_MODEL="z-ai/glm-5.3-flash"
+    if [ -z "$ANTHROPIC_DEFAULT_HAIKU_MODEL" ] || [ -z "$ANTHROPIC_DEFAULT_SONNET_MODEL" ]; then
+      echo "REMAPS MISSING - agent model: aliases will bill as real Claude models through OpenRouter" >&2
+    fi
     claude --model z-ai/glm-5.3
 
 Notes:
@@ -96,6 +102,12 @@ Gate results:
   Verified on this machine against the Claude Code version current on 2026-09-08; the
   docs' position that third-party gateways are unsupported still stands — re-run this
   gate after a Claude Code update if agents error on model.
+- 2026-09-08, the leak the guards exist for: a dry-run session launched through the `ori` flow —
+  discovery on, remaps absent — billed scout turns as Claude Haiku 4.5 (~30–43k input,
+  $0.006–$0.046 each) and the worker as Claude Sonnet 5 (~54–77k input) through OpenRouter while
+  the parent ran GLM 5.3 Flash as intended. Same agent files as the passing gate; only the launch
+  environment differed. Every label said "flash tier"; the billing log said otherwise — trust the
+  billing log.
 - 2026-09-08, planning session: the committed spec-reviewer (`model: sonnet`, launched
   under the ori.exe gateway environment with no alias remaps) launched and ran without
   a model error — the served slug was not identified.

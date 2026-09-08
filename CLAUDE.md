@@ -304,6 +304,15 @@ serve both, and `.claude/README.md` is their operating doc:
   `ANTHROPIC_DEFAULT_*_MODEL` alias remaps, then `claude --model z-ai/glm-5.3`. Not
   `ori` — its Claude Code launcher diverges from the documented environment.
 
+Under an OpenRouter session (`ANTHROPIC_BASE_URL` set), verify that both
+`ANTHROPIC_DEFAULT_HAIKU_MODEL` and `ANTHROPIC_DEFAULT_SONNET_MODEL` exist in the
+environment **before the first subagent spawn** — one zero-cost env read. Without them, an
+agent file's `model:` alias falls back to the real Claude model ID and bills at Anthropic
+rates through OpenRouter (2026-09-08: a dry run launched through the `ori` flow did exactly
+that — scouts on Claude Haiku 4.5, the worker on Claude Sonnet 5, while every label said
+"flash tier"). Halt and relaunch with the block in `.claude/README.md` if they are absent.
+First-party sessions have no `ANTHROPIC_BASE_URL`, so the check no-ops there.
+
 Both launch from `Truing Repo` root, never a subdirectory — agent discovery and shared
 memory live at the root.
 
