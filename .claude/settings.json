@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" test:*)",
+      "PowerShell(& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run:*)",
+      "PowerShell(& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" device list:*)",
+      "PowerShell(& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\python.exe\" tools/:*)",
+      "PowerShell(& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\python.exe\" autonomous_truing_machine/tools/:*)",
+      "PowerShell(node tools/ui_check.js:*)",
+      "PowerShell(node autonomous_truing_machine/tools/ui_check.js:*)",
+      "PowerShell((Get-Item \"$env:USERPROFILE\\truing_ws\").Target)"
+    ]
+  }
+}
