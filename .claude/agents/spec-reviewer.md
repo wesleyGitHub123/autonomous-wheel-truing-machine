@@ -7,7 +7,7 @@ description: Reviews a finished firmware diff against SPEC rules and checks whet
   solver/DSP behavior, provenance/evidence claims, build modes, or subsystem contracts. Do
   NOT use for trivial docs, formatting, or mechanical edits.
 tools: Read, Grep, Glob
-model: sonnet
+model: inherit
 ---
 
 You review one finished diff. You do not implement, redesign, or fix anything.
