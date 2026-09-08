@@ -292,6 +292,41 @@ Stop and ask for:
 - Commits are atomic and conventional, and the body says cause, evidence and limits — match
   the existing style, including what a change does *not* establish.
 
+## Entry points and handoff
+
+Two launchers, one repo — the same committed `.claude/agents/` and `.claude/settings.json`
+serve both, and `.claude/README.md` is their operating doc:
+
+- **first-party** — `claude --model sonnet` (or opus). Always pass `--model`: a bare
+  launch inherits whatever default is saved in `~/.claude/settings.json`, and that file
+  has held OpenRouter-only slugs before.
+- **OpenRouter** — the direct environment launch: export the base URL, token and the two
+  `ANTHROPIC_DEFAULT_*_MODEL` alias remaps, then `claude --model z-ai/glm-5.3`. Not
+  `ori` — its Claude Code launcher diverges from the documented environment.
+
+Both launch from `Truing Repo` root, never a subdirectory — agent discovery and shared
+memory live at the root.
+
+Git state is the handoff protocol between them. A clean tree at session start is safe to
+work in; a dirty tree means someone else is mid-work — halt and ask. Never leave a dirty
+tree behind: a mid-work stop is handed off as a WIP commit whose body records state and
+next step. A session resuming in-flight work re-runs full T2 on arrival.
+
+## Subagents
+
+| agent | job | spawn when |
+|---|---|---|
+| `firmware-scout` | read-only investigation — root cause, call paths, blast radius, governing SPEC sections | the question spans more than a couple of files, or needs code, tests and SPEC cross-referenced |
+| `firmware-worker` | bounded implementation of an already-decided change, through full T2 and the affected builds | the primary has written a decision envelope — decision, invariants, files, tests, do-not |
+| `spec-reviewer` | independent audit of a finished diff against the spec and the evidence claims | after a substantive change passes T2, before commit (its own description is the trigger) |
+| `bench-verifier` | on-target evidence via the committed bench tools; escalates physical steps to the operator | every T6 run, any board-side T3 |
+
+Parallelize reading, serialize writing — scouts and the reviewer may run concurrently;
+one worker at a time; bench-verifier is exclusive on the hardware. The primary owns every
+commit and every final claim: workers propose commit messages and never commit, and
+evidence claims rest with the primary, not with whichever subagent produced the output.
+Spawn by need, not rote — a single-file question is the primary's own read, not a scout.
+
 ## Where this file is going
 
 As `tools/flash.py`, `tools/verify.py` and the probe tooling land, the command-heavy sections
