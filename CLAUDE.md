@@ -183,7 +183,7 @@ build per board.
 | `*_selfplay` | auto-operator answers its own waits; the unattended evidence run |
 | `*_mic` | interactive + the physical INMP441 front end |
 | `*_fastdemo` | synthetic acquisition, selectable per session in the UI |
-| `*_fastdemo_mic` | the acoustic demonstration: real mic, synthetic runout, 3 bounded plucks |
+| `*_fastdemo_mic` | the acoustic demonstration: real mic, synthetic runout, 3 bounded solenoid strikes |
 | `s3_devkit_provision` | one-off NVS fixture provisioning; not part of the release sweep |
 | `native` | host unit tests |
 
@@ -247,7 +247,8 @@ Three `Hash of data verified.` means the write worked — **not** that the board
 
 - **One INMP441**, wired to the Nano. That is a wiring fact, not a demo architecture — the
   demo runs on one board in one session.
-- Demo goal: a few real plucks to show the acquisition path works, then fast-forward to the
+- Demo goal: a few real solenoid strikes (one solenoid per flange at its own acoustic station; no
+  hand-pluck path) to show the acquisition path works, then fast-forward to the
   solver. Panelists will not watch 64 measurements.
 - The shipped artifact has `n_mt_identified == false`, so the active layout is
   `TENSION_ABSENT` and **every tension row is excluded from the solve by policy**. The
