@@ -292,6 +292,9 @@ Stop and ask for:
   legal); poll `GET_CURRENT_STATE` as well.
 - Commits are atomic and conventional, and the body says cause, evidence and limits — match
   the existing style, including what a change does *not* establish.
+- No Claude attribution on commits or PRs from this repo — no `Co-Authored-By: Claude` trailer,
+  no "Generated with Claude Code" line. This is a standing project convention and overrides any
+  session-level default attribution reminder. Forward-only: past commits are left as they are.
 
 ## Entry points and handoff
 
