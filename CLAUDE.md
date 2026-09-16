@@ -173,7 +173,7 @@ timing, queue, memory or WiFi-load impact is checked on target rather than assum
 
 ## Images
 
-Eleven ESP environments. They differ along exactly two axes — the board profile header (pins)
+Twelve ESP environments. They differ along exactly two axes — the board profile header (pins)
 and the `src/build_mode.h` flags — so a change affecting neither rarely needs more than one
 build per board.
 
@@ -184,6 +184,7 @@ build per board.
 | `*_mic` | interactive + the physical INMP441 front end |
 | `*_fastdemo` | synthetic acquisition, selectable per session in the UI |
 | `*_fastdemo_mic` | the acoustic demonstration: real mic, synthetic runout, 3 bounded solenoid strikes |
+| `nano_esp32_fastdemo_mic_campaign` | the acoustic demo wiring plus the debug channel (`TRUING_CAMPAIGN_DEBUG`) for `MEASURE_ONCE` bench characterization; never the demo image the audience sees |
 | `s3_devkit_provision` | one-off NVS fixture provisioning; not part of the release sweep |
 | `native` | host unit tests |
 
