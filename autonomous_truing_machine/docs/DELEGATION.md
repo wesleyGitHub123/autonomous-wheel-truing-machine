@@ -1,8 +1,8 @@
 # Delegation Mode: handing bounded work to an external coding agent
 
-**Status: adopted 2026-09-19, not yet active.** The rule is frozen here. It becomes active when the
-operator says so explicitly, and even then only for a session in which the operator has switched the
-mode on. **The mode is OFF by default in every session and is never inferred.**
+**Status: adopted and active as of 2026-09-19** (the operator confirmed it, and switched the mode on for
+the session that ran the first trial). The rule is frozen here. Active means the rule is in force; it
+does not mean the mode is on. **The mode is OFF by default in every session and is never inferred.**
 
 This is human-mediated. The lead (the Claude Code session) cannot prompt or control the delegate. The
 operator carries the handoff to the delegate and carries its report back. Internal Claude Code
