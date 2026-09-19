@@ -200,12 +200,14 @@ duplicate that here.
 |---|---|---|
 | env prefix | `s3_devkit` | `nano_esp32` |
 | port (observed; confirm with `pio device list`) | `COM4` (CH343 bridge) | `COM5` (native USB-Serial/JTAG) |
-| base MAC | `dc:b4:d9:1a:95:94` | `74:4d:bd:a0:9f:0c` |
-| AP SSID / pass | `truing-1a9595` / `truing-d91a9595` | `truing-a09f0d` / `truing-bda09f0d` |
+| base MAC | `<DEVKIT_BASE_MAC>` | `<NANO_BASE_MAC>` |
+| AP SSID / pass | `truing-<xxxxxx>` / `<LOCAL_PASSWORD>` | `truing-<xxxxxx>` / `<LOCAL_PASSWORD>` |
 | the INMP441 | not wired | **wired here** — bclk 5, ws 6, din 7 |
 
 COM numbers are assigned by Windows and can move; the MAC and the SSID are the board's real
-identity. Both serve the UI on `http://192.168.4.1/`. `GET /id` is the only reliable way to
+identity, and are read from the boot console rather than recorded here (SSID and passphrase are
+derived from the MAC -- `derive_credentials`, `src/net_transport.c`). Both serve the UI on
+`http://192.168.4.1/`. `GET /id` is the only reliable way to
 tell which board and which build you actually reached — check `build` matches the rev you
 flashed.
 

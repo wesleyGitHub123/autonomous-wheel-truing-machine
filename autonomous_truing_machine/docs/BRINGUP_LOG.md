@@ -296,15 +296,15 @@ number in them. Nothing downstream would notice. They are byte-exact here.
 ### Transport
 
 ```
-wifi:mode : softAP (dc:b4:d9:1a:95:95)
+wifi:mode : softAP (xx:xx:xx:xx:xx:xx)
 esp_netif_lwip: DHCP server started on interface WIFI_AP_DEF with IP: 192.168.4.1
 net:  SPEC 12.1 transport up. Join the network and browse to:
-net:    SSID       truing-1a9595
+net:    SSID       truing-xxxxxx
 net:    URL        http://192.168.4.1/
 ```
 
 The passphrase is derived from the same MAC and printed beside the SSID; neither
-is stored in the repository.
+is stored in the repository. (MAC and SSID are redacted from the captured excerpt above.)
 
 ### SPEC 9.4 — capture under WiFi load
 
