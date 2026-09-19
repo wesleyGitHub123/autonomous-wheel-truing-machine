@@ -343,6 +343,24 @@ commit and every final claim: workers propose commit messages and never commit, 
 evidence claims rest with the primary, not with whichever subagent produced the output.
 Spawn by need, not rote — a single-file question is the primary's own read, not a scout.
 
+### Delegation Mode (external agent: optional, default OFF)
+
+A separate, human-mediated mechanism from the internal subagents above: the lead can hand bounded work
+to an external coding agent (GLM-5.3 or GLM-5.3-Flash, driven by Cline) that the operator runs. It is
+**OFF at the start of every session and is never inferred from context.** It is on only after the
+operator says "Delegation Mode: ON", and off again on "Delegation Mode: OFF". While OFF, none of this
+applies and no external handoffs are written.
+
+While ON, when the next unit of work is bounded, has a committed specification and a machine-checkable
+verifier, and touches no campaign record, plan, `src/`, `lib/` or hardware, the lead **stops before
+doing it** and posts a proposal: the unit and why it qualifies, the model and why, the complete handoff
+prompt, what to bring back, and how the return will be reviewed. If working out the blast radius, the
+architecture or the requirement is itself the hard part, that stays with the lead.
+
+The rule, the routing between the two models, the handoff template, the risk-scored review and the
+failure policy are in `autonomous_truing_machine/docs/DELEGATION.md`. The delegate's standing rules are
+`.clinerules/` at this repository root. Handoffs live in `autonomous_truing_machine/docs/handoffs/`.
+
 ## Where this file is going
 
 As `tools/flash.py`, `tools/verify.py` and the probe tooling land, the command-heavy sections
