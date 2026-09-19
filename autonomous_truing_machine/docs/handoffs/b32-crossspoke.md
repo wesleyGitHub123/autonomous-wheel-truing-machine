@@ -131,3 +131,91 @@ No attribution trailer; check `git log -1 --format=%B` after each commit.
 ## Repeat of the hard limits
 No hardware. No record, plans, `src/` or `lib/`. Touch only the one file. No attribution. Stop and
 report `BLOCKED` when unsure.
+
+## Return report
+Handoff: b32-crossspoke    Base: aa52349    Branch HEAD: 2e49ddd (the tool commit; this report is the final commit on top of it)
+Status: DONE
+
+1. Files changed
+   autonomous_truing_machine/tools/b32_crossspoke.py | +522/-0 | the one new tool, its selftest, and nothing else
+   git diff --stat aa52349..HEAD:
+     autonomous_truing_machine/tools/b32_crossspoke.py | 522 ++++++++++++++++++++++
+     1 file changed, 522 insertions(+)
+
+2. Acceptance criteria
+   1 met  - selftest case 1 (flagged, common 501.0, spokes [3, 5, 17])
+   2 met  - selftest case 2
+   3 met  - selftest case 3 (both the 500/502/504 flag and the 504.01 non-flag)
+   4 met  - selftest case 4
+   5 met  - selftest case 5
+   6 met  - selftest case 6 (B3.2_exclusions.jsonl ledger)
+   7 met  - selftest case 7 (three sub-cases: width, candidate, station; cell keys asserted distinct)
+   8 met  - selftest case 8 (air_shot, no_fire, and B3.0 strike rows never counted)
+   9 met  - selftest cases 9a-9f (3/6 matched, 2/6 no line, 503.5 listed not matched, RIGHT/60 only, below min SNR, no lines CSV -> "not performed")
+   10 met - selftest case 10 (no PASS/FAIL in output, main() rc 0 flagged and unflagged, sha256 of every input file identical before/after)
+   11 met - selftest case 11 ("no B3.2 strike bundles"; "strike data from 2 of 4 exploration spokes")
+   All asserted in selftest() of the tool; the report itself is rendered only after the same analyse() the cases assert on.
+
+3. Commands run
+   Baseline, in worktree C:/Users/shomb/wt/b32-crossspoke, before any change:
+     pio.exe test -d "C:\Users\shomb\wt\b32-crossspoke\autonomous_truing_machine" -e native
+       ... native test_proto_session PASSED / test_proto_wire PASSED
+       ================ 228 test cases: 228 succeeded in 00:00:44.540 ================
+     python tools/b30_verdict.py --selftest -> selftest ok: pass/fail/inconclusive, ... exclusions
+   After:
+     python tools/b32_crossspoke.py --selftest ->
+       selftest ok: flag needs 3 distinct spokes within +-2 Hz (inclusive, ties to the lowest centre), common = median, one spoke counted once, rejected/ledgered rows and non-strike bundles never count, cells never mix station/width/candidate, air lines at the same station and width only (from the baseline-profile lines CSV), no PASS/FAIL, exit 0, inputs untouched, empty and partial data reported
+     python tools/b30_verdict.py --selftest -> unchanged selftest ok line
+     pio.exe test ... -e native ->
+       ================ 228 test cases: 228 succeeded in 00:00:40.848 ================
+   Baseline before: 228/228    After: 228/228
+
+4. Mutation checks (each run for real, failing output verbatim, then restored and passing)
+   (a) threshold 3 -> 2 (FLAG_SPOKES = 2):
+       AssertionError: case 2: only 2 within 2 Hz of any centre must not be flagged   (exit 1)
+   (b) inclusive -> exclusive (abs(f - c) <= tol -> < tol):
+       AssertionError: case 3: 500.0/502.0/504.0 spans exactly +-2 Hz: flagged   (exit 1)
+   (c) count clears instead of distinct spokes (len(members) in place of len(spokes)):
+       AssertionError: case 4: 4 clears from 2 spokes must not be flagged   (exit 1)
+   All three restored; final selftest prints the selftest ok line above, exit 0.
+
+5. Reuse search
+   Searched for load_bundles / parse_lines_csv / coherent_lines / LINE_TOL_HZ implementations and for the
+   sys.path.insert pattern. Reused b30_verdict.load_bundles (bundles + exclusion ledger), b30_verdict.parse_lines_csv,
+   b30_verdict.coherent_lines (air-shot coherence, 50% rule), b30_verdict.LINE_TOL_HZ (both the +-2 Hz coincidence
+   band and the air-line match band). Imitated the shape of tools/b30_verdict.py (argparse, main(), selftest()
+   with synthetic temp fixtures, stdlib only). Sweep row format taken from test/test_acoustic_sweep/test_main.c
+   (read only, never run). Nothing reimplemented.
+
+6. Decisions I took (all within "You may decide": internal structure, report wording, fixture building)
+   - Common frequency = statistics.median over the chosen centre's member f1 values (standard median; an even
+     member count would average the two middle values - no test case has an even count).
+   - The exclusion ledger also excludes ledgered air shots from the air-line captures (the ledger is a bundle
+     exclusion; load_bundles returns it for exactly that use, as b30_verdict.evaluate skips ledgered bundles).
+   - Air shots are selected by campaign_kind == "air_shot", station and width only (no stage filter); the
+     governing text says "that station's air shots at the same width" and B3.0 air shots at 40-85 ms widths do
+     not collide with the reported cells in practice. Flagging for the lead's review.
+   - Width = int(round(pulse_ms)) as a float pulse_ms such as 72.0; a strike bundle missing station, pulse_ms or
+     spoke_id cannot form a cell and is not counted.
+   - The report lists every cell that has at least one clear (flagged and not flagged) plus per-station spoke
+     coverage, since a bare flagged-only list would not show the partial-coverage statement criterion 11 needs.
+
+7. Escalations
+   none
+
+8. Assumptions
+   - A B3.2 strike bundle that lacks campaign_station, pulse_ms or spoke_id is not counted (it cannot form a
+     cell); the registered data shape always has these fields.
+   - Sweep rows for bundles absent from the bundle directory are reported in the report as not counted, not
+     silently dropped.
+
+9. Deviations from the handoff
+   none
+
+10. What I think needs the lead's review
+   - The tool has never seen real data; per the handoff the lead runs it on the campaign data first.
+   - The no-stage-filter choice for air-shot selection (decision above) is worth a glance against the real
+     bundle directory, where B3.0 and B3.2 air shots share the directory.
+
+11. Anything in the handoff that was wrong, ambiguous or missing
+   none

@@ -252,7 +252,7 @@ resets it. If the first few tasks show the template or the routing is wrong, thi
 
 | Date | Task | Model | Review depth | Rounds | Outcome | Lead's review cost / notes |
 |---|---|---|---|---|---|---|
-| | | | | | | |
+| 2026-09-19 | b32-crossspoke: new report tool, one file (task class: additive Python tool) | Flash | Standard (score 1, raised by the override: its flags hold B3.3 approval) | 1 | Accepted; 1 clean return of the 3 needed for this class to drop a step | Report accurate on every field checked. 11/11 criteria; 3 mutations reproduced by the delegate and 3 more by the lead (2 not run by the delegate) all failed as they should. Real-format smoke on relabelled scratch copies of real air captures parsed both CSVs and reached the flag and air-check paths. Lead's edits: 2 docstring lines (a mode value that does not exist). Cost to the lead: ~14 calls for proposal and handoff, ~10 for review; about the cost of writing it, as forecast. Not tested: any real strike data (none exists yet) |
 
 ---
 
