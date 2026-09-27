@@ -135,7 +135,9 @@ fail (`build_mode.h` enforces them with `#error`):
     gcc -fsyntax-only -I. $FLAGS /tmp/bm.c
 
     legal   (none) | SELF_PLAY | FAST_DEMO | REAL_FRONT_END | FAST_DEMO+REAL_FRONT_END
+            | FAST_DEMO+REAL_FRONT_END+CAMPAIGN_DEBUG[+DUAL_MIC]
     illegal SELF_PLAY+FAST_DEMO | SELF_PLAY+REAL_FRONT_END | ACOUSTIC_DEMO_SPOKES alone
+            | DUAL_MIC without CAMPAIGN_DEBUG
 
 ## Working loops
 
@@ -173,7 +175,7 @@ timing, queue, memory or WiFi-load impact is checked on target rather than assum
 
 ## Images
 
-Twelve ESP environments. They differ along exactly two axes — the board profile header (pins)
+Thirteen ESP environments. They differ along exactly two axes — the board profile header (pins)
 and the `src/build_mode.h` flags — so a change affecting neither rarely needs more than one
 build per board.
 
@@ -185,6 +187,7 @@ build per board.
 | `*_fastdemo` | synthetic acquisition, selectable per session in the UI |
 | `*_fastdemo_mic` | the acoustic demonstration: real mic, synthetic runout, 3 bounded solenoid strikes |
 | `nano_esp32_fastdemo_mic_campaign` | the acoustic demo wiring plus the debug channel (`TRUING_CAMPAIGN_DEBUG`) for `MEASURE_ONCE` bench characterization; never the demo image the audience sees |
+| `nano_esp32_fastdemo_mic_dualmic` | the campaign variant with both I2S slots read (`TRUING_DUAL_MIC`): one mic per station, DSP still on the struck station's mic only; for `tools/workbench.py` |
 | `s3_devkit_provision` | one-off NVS fixture provisioning; not part of the release sweep |
 | `native` | host unit tests |
 
