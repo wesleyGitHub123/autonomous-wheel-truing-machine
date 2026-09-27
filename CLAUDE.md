@@ -186,10 +186,15 @@ build per board.
 | `*_mic` | interactive + the physical INMP441 front end |
 | `*_fastdemo` | synthetic acquisition, selectable per session in the UI |
 | `*_fastdemo_mic` | the acoustic demonstration: real mic, synthetic runout, 3 bounded solenoid strikes |
-| `nano_esp32_fastdemo_mic_campaign` | the acoustic demo wiring plus the debug channel (`TRUING_CAMPAIGN_DEBUG`) for `MEASURE_ONCE` bench characterization; never the demo image the audience sees |
-| `nano_esp32_fastdemo_mic_dualmic` | the campaign variant with both I2S slots read (`TRUING_DUAL_MIC`): one mic per station, DSP still on the struck station's mic only; for `tools/workbench.py` |
+| `*_fastdemo_mic_campaign` | the acoustic demo wiring plus the debug channel (`TRUING_CAMPAIGN_DEBUG`) for `MEASURE_ONCE` bench characterization; never the demo image the audience sees |
+| `*_fastdemo_mic_dualmic` | the campaign variant with both I2S slots read (`TRUING_DUAL_MIC`): one mic per station, DSP still on the struck station's mic only; for `tools/workbench.py` |
 | `s3_devkit_provision` | one-off NVS fixture provisioning; not part of the release sweep |
 | `native` | host unit tests |
+
+The acoustic front end (both mics, both solenoid stations) lives on `s3_devkit_*` now, not
+`nano_esp32_*` — the Nano that carried it died to a wiring mistake (2026-09-27). The `nano_esp32_*`
+acoustic envs stay in the build matrix as a record of what ran there and stay green in T5, but there
+is no board to flash them to.
 
 Every image stamps its own identity at build time (`tools/build_identity.py`): the short git
 rev, `-dirty` if the tree was not clean, and a hash of `src/web_ui.h`. `GET /id`, the boot log
@@ -199,20 +204,24 @@ duplicate that here.
 
 ## Boards
 
-|  | DevKit | Nano |
-|---|---|---|
-| env prefix | `s3_devkit` | `nano_esp32` |
-| port (observed; confirm with `pio device list`) | `COM4` (CH343 bridge) | `COM5` (native USB-Serial/JTAG) |
-| base MAC | `<DEVKIT_BASE_MAC>` | `<NANO_BASE_MAC>` |
-| AP SSID / pass | `truing-<xxxxxx>` / `<LOCAL_PASSWORD>` | `truing-<xxxxxx>` / `<LOCAL_PASSWORD>` |
-| the INMP441 | not wired | **wired here** — bclk 5, ws 6, din 7 |
+**The Nano ESP32 is dead** (wiring mistake, 2026-09-27, while adding a second INMP441 for the
+dual-mic seam) and is out of rotation. **Two physical ESP32-S3-DevKitC-1 boards are now in play**,
+same env prefix and same board type, so they are told apart by identity, never by port or name:
 
-COM numbers are assigned by Windows and can move; the MAC and the SSID are the board's real
-identity, and are read from the boot console rather than recorded here (SSID and passphrase are
-derived from the MAC -- `derive_credentials`, `src/net_transport.c`). Both serve the UI on
-`http://192.168.4.1/`. `GET /id` is the only reliable way to
-tell which board and which build you actually reached — check `build` matches the rev you
-flashed.
+|  | roller DevKit | acoustic DevKit |
+|---|---|---|
+| carries | `feat/roller-nav` (`truing_roller` worktree): NEMA17 + TMC2209 | the acoustic front end: both mics, both solenoid stations (moved here from the dead Nano) |
+| env prefix | `s3_devkit` (roller envs, `s3_devkit_fastdemo_roller`) | `s3_devkit` (acoustic envs, `s3_devkit_fastdemo_mic*`) |
+| port | `COM4` (pinned in `[env:s3_devkit]`) | **not pinned** — confirm with `pio device list` before every flash |
+| the INMP441 (mic) | not wired | wired — bclk 4, ws 5, din 6; dual-mic bring `BOARD_I2S_MIC_INPUT_*_STATION` (`tools/WORKBENCH.md`) |
+| solenoids | not wired (no acoustic station) | GPIO 15 (LEFT) / GPIO 21 (RIGHT); `PRESENT` stays 0 until each passes its own B0 bench check |
+
+COM numbers are assigned by Windows and can move; the MAC and the AP SSID are each board's real
+identity (SSID and passphrase are derived from the MAC -- `derive_credentials`,
+`src/net_transport.c`), read from the boot console rather than recorded here. Both serve the UI on
+`http://192.168.4.1/` from their own AP, so join the right one first. `GET /id` is the only reliable
+way to tell which board and which build you actually reached — check `build` matches the rev you
+flashed, and don't assume `COM4` is the acoustic board just because a DevKit answered there.
 
 ### Flashing
 
@@ -251,8 +260,9 @@ Three `Hash of data verified.` means the write worked — **not** that the board
 
 ## Project constraints
 
-- **One INMP441**, wired to the Nano. That is a wiring fact, not a demo architecture — the
-  demo runs on one board in one session.
+- **Two INMP441s**, one per acoustic station, wired to the acoustic DevKit (moved here from the
+  dead Nano, which carried one). Which mic serves the demo session is a wiring fact, not a demo
+  architecture — the demo runs on one board in one session either way.
 - Demo goal: a few real solenoid strikes (one solenoid per flange at its own acoustic station; no
   hand-pluck path) to show the acquisition path works, then fast-forward to the
   solver. Panelists will not watch 64 measurements.
