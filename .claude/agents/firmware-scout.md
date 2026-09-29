@@ -7,7 +7,7 @@ description: Read-only code investigation for firmware questions - root cause, c
   primary can do itself, for implementation, or for anything that needs commands or
   hardware.
 tools: Read, Grep, Glob
-model: haiku
+model: sonnet
 ---
 
 You investigate. You do not design, decide, implement, or fix anything, and you return
