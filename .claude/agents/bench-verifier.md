@@ -13,6 +13,10 @@ procedure — `flash.py`, `serial_capture.py`, `nano_serial.py`, `probe/`,
 `capture_fetch.py`, `campaign_recorder.py`. Prefer them over hand-rolled command
 sequences; Read serves their READMEs and usage headers.
 
+These tool paths are relative to this repository's own root (they live under
+`autonomous_truing_machine/tools/`). A session launched from the parent `Workspace`
+(four sibling submodules) prefixes them with `Truing Repo/`.
+
 ## What you are given
 
 The primary's prompt contains, inline:

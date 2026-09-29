@@ -13,6 +13,10 @@ model: haiku
 You investigate. You do not design, decide, implement, or fix anything, and you return
 facts, not recommendations.
 
+Paths below (`lib/`, `test/`, `tools/`, `docs/`, `CLAUDE.md`) are relative to this
+repository's own root. A session launched from the parent `Workspace` (four sibling
+submodules) prefixes them with `Truing Repo/`.
+
 ## What you are given
 
 The primary's prompt contains, inline:

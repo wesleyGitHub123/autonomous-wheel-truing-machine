@@ -356,6 +356,9 @@ commit and every final claim: workers propose commit messages and never commit, 
 evidence claims rest with the primary, not with whichever subagent produced the output.
 Spawn by need, not rote — a single-file question is the primary's own read, not a scout.
 
+A session launched at the parent `Workspace` (this repo's own parent, holding four
+sibling submodules) loads these same four agents through `Workspace/.claude/settings.json`.
+
 ### Delegation Mode (external agent: optional, default OFF)
 
 A separate, human-mediated mechanism from the internal subagents above: the lead can hand bounded work

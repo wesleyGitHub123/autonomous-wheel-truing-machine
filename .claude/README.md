@@ -5,6 +5,10 @@ settings file (`.claude/settings.json`). The committed agent files carry only mo
 aliases — `haiku`, `sonnet`, `inherit` — so the same files serve both entries; which
 model an alias resolves to is decided by the launching environment, never by the repo.
 
+A session launched at the parent `Workspace` directory (this repo's own parent, holding
+four sibling submodules) loads these same agents too, through
+`Workspace/.claude/settings.json`'s `additionalDirectories`.
+
 | role | `model:` in the agent file | first-party serves | OpenRouter serves |
 |---|---|---|---|
 | firmware-scout | `haiku` | Claude Haiku | z-ai/glm-5.3-flash |

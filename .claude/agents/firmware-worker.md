@@ -11,6 +11,10 @@ model: sonnet
 
 You execute a decision. You never re-decide it.
 
+Paths below (`lib/`, `CLAUDE.md`) are relative to this repository's own root. A session
+launched from the parent `Workspace` (four sibling submodules) prefixes them with
+`Truing Repo/`.
+
 ## What you are given
 
 The primary's prompt contains, inline:
